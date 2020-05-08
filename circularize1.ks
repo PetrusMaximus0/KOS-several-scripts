@@ -1,20 +1,11 @@
 clearscreen.
 sas off.
 rcs on.
-run functionlib.
 lock steering to prograde.
-function ntval_calc{
-   	// not accurate with SRBs attached.
-	parameter dacc.//desired acceleration
-	if ship:availablethrust > 0{
-        return ship:mass*dacc/ship:availablethrust.	
-   }else{
-        return 0.
-   }
-}
+run functionlib.
 stagelogic().
 print "Running Circularize 1" at (0,20).
-local TargetApoapsis to 75000.
+local targetOrbitLevel to 100000.
 local OrbitHeading to 90.
 local HeadingVector to 0.
 local e1 to 0.
@@ -33,29 +24,35 @@ local kdp to 0.099.
 local kip to 0.001.
 local PitchInput to kpp*CurrentError+kdp*DerivativeOfError+kip*IntegralError.
 declare global gotap to ship:apoapsis.
+IF targetOrbitLevel < ship:apoapsis {
+	print "WARNING!".
+	print "Desired orbit level is SMALLER by a factor of" + apoapsis/targetOrbitLevel + "than the current apoapsis".
+}
 
-until ship:apoapsis >= TargetApoapsis{
+until ship:apoapsis >= targetOrbitLevel{
 	lock throttle to 1.
 }
 lock throttle to ntval_calc(dacc).
 until ship:periapsis >=  gotap {			  
+	PRINT "GOTAP" + GOTAP AT (10,1).
+	PRINT "PERI" + SHIP:PERIAPSIS AT (10,1).
 	if Periapsis > 0 { 
 		set dacc to 1. 
 	}else{
 		set dacc to 5.
 	}
 	if verticalspeed > 0 {
-		set CurrentError to -TargetApoapsis+Apoapsis.
-	}else if verticalspeed < 0{
-		set CurrentError to -(TargetApoapsis+Altitude).
+		set CurrentError to -targetOrbitLevel+Apoapsis.
+	}else{
+		set CurrentError to -(targetOrbitLevel+Altitude).
 	}
 	set e0 to CurrentError.
 	set t0 to time:seconds.
 	wait 0.01.
 	if verticalspeed > 0 {
-		set CurrentError to -TargetApoapsis+Apoapsis.
-	}else if verticalspeed < 0{
-		set CurrentError to -(TargetApoapsis+Altitude).
+		set CurrentError to -targetOrbitLevel+Apoapsis.
+	}else{
+		set CurrentError to -(targetOrbitLevel+Altitude).
 	}
 	set e1 to CurrentError.
 	set t1 to time:seconds.
@@ -79,10 +76,11 @@ until ship:periapsis >=  gotap {
 	set HeadingVector to heading(OrbitHeading ,max(-35,min(35,-PitchInput))).
 	lock steering to HeadingVector.
 	wait 0.5.
-	set gotap to TargetApoapsis-100.//50 is margin for overshoot and adjustment.
-	if abs(currentError) < 10 
+	set gotap to targetOrbitLevel-100.//50 is margin for overshoot and adjustment.
+	if abs(currentError) < 10 {
 		set integralError to 0.
+	}
 }
-clearscreen.
+//clearscreen.
 sas on.
 unlock all.
