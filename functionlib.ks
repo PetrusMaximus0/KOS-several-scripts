@@ -496,7 +496,7 @@ function AverageISP {
 	return ISPsum/NumberOfEngines.
 }
 function abort_logic{
-	//not working well
+	//not working at all
 	parameter desiredHeading.
 	local myvec to desiredHeading:vector.
 	local allowedOffset to 15. //in degrees 
