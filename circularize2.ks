@@ -6,7 +6,7 @@ rcs on.
 run functionlib.
 stagelogic().
 wait 2.// waits for engine ON
-local TargetApoapsis to SHIP:APOAPSIS.
+local TargetApoapsis to 2203120.
 local OrbitHeading to 90.
 local dacc to 0.
 //local maxAccel to 2.//aceleração máxima desejada
@@ -39,24 +39,24 @@ until (time:seconds >= BurnStartTime-TimeDelay){
 		set steering to CircularizeNode:deltaV.
 	
 	}
-	set TimeDelay to t1 - t0.
-	print "TimeLeft for burn " + (-time:seconds + BurnStartTime) at (0,2).
+	set TimeDelay to 0.// t1 - t0.
+	print "TimeLeft " + (-time:seconds + BurnStartTime) at (0,2).
 	print "Latency " + round(TimeDelay,6) + "                                                                  " at (0,17).
 	set t0 to t1.
 }
 
 until (time:seconds >= BurnEndTime+TimeDelay ) {
 	//engine is shutting off too early. The calculated time matches the node calculated time.
-		//thank you for this comment past me, it helped me realize this had a prior mistake :)) 
 	set dacc to 100.
 	set steering to CircularizeNode:deltaV.
-	print "TimeLeft for MECO " + (BurnEndTime-time:seconds) at (0,2).
-	print "Latency " + round(TimeDelay,6) + "                                                                  " at (0,17).
+	print "TimeLeft " + (-time:seconds + BurnEndTime) at (0,2).
+	
 }
 print "Engines OFF " at (0,5).
 SET DACC TO 0.
-//exnode().
+exnode().
+//set maxAccel to 0.
 //clearscreen.
 ProgradeStabilize().
-Remove CircularizeNode.
+//Remove CircularizeNode.
 unlock all.
