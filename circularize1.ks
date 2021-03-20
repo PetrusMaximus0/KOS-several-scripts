@@ -1,17 +1,8 @@
 clearscreen.
 sas off.
 rcs on.
-run functionlib.
 lock steering to prograde.
-function ntval_calc{
-   	// not accurate with SRBs attached.
-	parameter dacc.//desired acceleration
-	if ship:availablethrust > 0{
-        return ship:mass*dacc/ship:availablethrust.	
-   }else{
-        return 0.
-   }
-}
+run functionlib.
 stagelogic().
 print "Running Circularize 1" at (0,20).
 local TargetApoapsis to 75000.
@@ -46,7 +37,7 @@ until ship:periapsis >=  gotap {
 	}
 	if verticalspeed > 0 {
 		set CurrentError to -TargetApoapsis+Apoapsis.
-	}else if verticalspeed < 0{
+	}else{
 		set CurrentError to -(TargetApoapsis+Altitude).
 	}
 	set e0 to CurrentError.
@@ -54,7 +45,7 @@ until ship:periapsis >=  gotap {
 	wait 0.01.
 	if verticalspeed > 0 {
 		set CurrentError to -TargetApoapsis+Apoapsis.
-	}else if verticalspeed < 0{
+	}else{
 		set CurrentError to -(TargetApoapsis+Altitude).
 	}
 	set e1 to CurrentError.
