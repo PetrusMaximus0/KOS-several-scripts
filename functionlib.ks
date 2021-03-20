@@ -2,6 +2,7 @@
 // DO NOT switch THE ORDER OF THE FUNCTIONS!
 @lazyglobal off.
 set ship:control:pilotmainthrottle to 0.
+global deltavee to 0.
 function currentg{
 	return (ship:body):mu /(SHIP:ALTITUDE + (ship:body):RADIUS)^2.
 }
@@ -26,19 +27,24 @@ function tval_calc{
 function stagelogic{
 	//local EngineHasFlameOut to false.
 	local motorlist to 0.
-	local engineNumberIS to 0. 	
+	local engineNumberIS to 0.
+	local n to 0. 	
 	when true then {
+		set engineNumberIs to 0.
 		wait 0.5.				
 		list engines in motorlist.
 		For eng in motorlist{
+			set n to n+1.
 			set engineNumberIS to engineNumberIS + 1.
-			print "EngineNumber: " + engineNumberIS at (0,18).
+			print "EngineNumber: " + engineNumberIS at (10,18+n).
 			if eng:FLAMEOUT = true {
 				stage.
+				clearscreen.
 				print "engine nº " + engineNUmberIs + " flamed out".
 			}
 			if eng:stage=stage:number and eng:ignition = false {			
 				eng:activate.
+				clearscreen.
 				print "engine nº " + engineNUmberIs + " was restarted".
 			}
 		}
@@ -64,8 +70,8 @@ function landIt{
 		set h to alt:radar.	
 		if h > 80 {
 			set dsvy to max((min(-8,(-h/20))),-40).
-		}else {
-			set dsvy to min(-2,6*(-h/40)).
+		//}else {
+			//set dsvy to min(-3,6*(-h/40)).
 		}		
 		set Vy to ship:verticalspeed.
 		set dsrtwr to (Vy/dsVy).	
@@ -128,6 +134,7 @@ function slamit{
 		lock throttle to ntval_calc(desiredAcceleration).
 		wait 0.
 	}
+	LandIt(1).
 }	
 function Rocket_Ascent{
 	//Power and trajectory guidance for ascent.
@@ -167,7 +174,7 @@ function Rocket_Ascent{
 	}	
 }
 function ReentryHeadingCorrection{
-	clearscreen.
+		clearscreen.
 	parameter InputCoordinates.
 	local desiredAcceleration to 0.
 	local progradePground to VXCL(up:vector,velocity:surface).
@@ -190,7 +197,7 @@ function ReentryHeadingCorrection{
 		set wangle to vang(altvec,targetaltvec).
 		print "WAngle is  " + round(wangle,2)+ "    " at (0,5).	
 	}
-	until vang(progradePground,targetaltvec)< (max(90,wangle)-89.9) or altitude < 50000 {
+	until vang(progradePground,targetaltvec)< (max(90,wangle)-89.9) OR ALTITUDE < 50000{
 		wait 0.01.
 		set targetaltvec to inputcoordinates:ALTITUDEPOSITION(ship:altitude).
 		set altvec to InputCoordinates:position-targetaltvec.
@@ -223,9 +230,10 @@ function ReentryPitchCorrection{
 	LOCK THROTTLE TO ntval_calc(desiredAcceleration).
 	lock steering to Lookdirup(-ship:velocity:surface,ship:body:position).
 	wait until vang(velocity:surface,-facing:forevector) < 5.
-	UNTIL (VXCL(ship:facing:starvector,v(0,0,0)+Trimpact)-VXCL(shIP:facing:starvector,v(0,0,0)+InputCoordinates:position)):mag < 1000 or altitude< 50000 {
+	UNTIL (VXCL(ship:facing:starvector,v(0,0,0)+Trimpact)-VXCL(shIP:facing:starvector,v(0,0,0)+InputCoordinates:position)):mag < 3000 or altitude< 55000 {
 		wait 0.
 		if (v(0,0,0)+Trimpact):mag < (v(0,0,0)+InputCoordinates:position):mag {
+			SET DESIREDaCCELERATION TO 0.
 			until (v(0,0,0)+Trimpact):mag > (v(0,0,0)+InputCoordinates:position):mag + 200{
 				set TrImpact to addons:tr:impactpos:position.
 				lock steering to VXCL(up:vector,TrImpact).
@@ -234,6 +242,7 @@ function ReentryPitchCorrection{
 				wait 0.
 				Print " D IS " + (VXCL(ship:facing:starvector,v(0,0,0)+Trimpact)-VXCL(shIP:facing:starvector,v(0,0,0)+InputCoordinates:position)):mag  at  (10,12).
 			}
+			SET DESIREDaCCELERATION TO 0.
 		}else{
 			lock steering to VXCL(up:vector,-velocity:surface).
 			wait until vang(ship:facing:vector, VXCL(up:vector,-velocity:surface)) < 10 .
@@ -245,11 +254,11 @@ function ReentryPitchCorrection{
 		}
 		
 	}
-
 	set desiredAcceleration to 0.
 	Print "angle correct ENDED    " at (10,10).
 	unlock all.
 }
+
 function properatmo{
 	//vectors
 	local targetaltvec 		to inputcoordinates:ALTITUDEPOSITION(ship:altitude).
@@ -366,11 +375,11 @@ function hover{
 	//	The lower k the lower angle. The reverse applies.
 	local k to 1*kp + kd*deltaerror + ki*integralerror . // when k = 1 the ship will point at a 45ยบ angle
 	local correctionvector to k*(targetaltvec)-altvec-8*correction2Vec .
-	if errorangle > 4 {
+	if errorangle > 10 {
 		set ship:control:top to 0.
 		set ship:control:starboard to 0.
 		if alt:radar > 50 {	
-			if errorangle > 40 and alt:radar < 200{
+			if errorangle > 30 and alt:radar < 1000{
 				lock steering to -(ship:velocity:surface:normalized+ship:body:position:normalized).
 				print "Mode is 3B: Retrograde OFF target(failsafe)    " at (5,12).
 			}else{
@@ -386,21 +395,21 @@ function hover{
 				print "Mode is 3: Retrograde OFF target              " at (5,12).
 			}
 		}
-	}else if errorangle < 4 {//needs to be adjusted for shipheight.
+	}else if errorangle < 10 {//needs to be adjusted for shipheight.
 		lock steering to lookdirup(-(ship:body:position:normalized+0.66*velocity:surface:normalized),v(0,0,1)).
 		print "Mode is 4: Retrograde on Point!               " at (5,12).
 		set lastIntegralError to 0.
 		if Vang(RCSassistVec,ship:facing:topvector) < 89 {
-			set ship:control:top to 1.
+			set ship:control:top to 0.25*ERRORANGLE.
 		}else if Vang(RCSassistVec,ship:facing:topvector) > 91 {
-			set ship:control:top to -1.
+			set ship:control:top to -0.25*ERRORANGLE.
 		}else{
 			set ship:control:top to 0.
 		}		
 		if vang(RCSassistVec,ship:facing:starvector) < 89 {
-			set ship:control:starboard to 1.
+			set ship:control:starboard to 0.25*ERRORANGLE.
 		}else if vang(RCSassistVec,ship:facing:starvector) > 91 {
-			set ship:control:starboard to -1.
+			set ship:control:starboard to -0.25*ERRORANGLE.
 		}else{
 			set ship:control:starboard to 0.
 		}
@@ -487,7 +496,7 @@ function AverageISP {
 	return ISPsum/NumberOfEngines.
 }
 function abort_logic{
-	//not working well
+	//not working at all
 	parameter desiredHeading.
 	local myvec to desiredHeading:vector.
 	local allowedOffset to 15. //in degrees 
@@ -508,8 +517,8 @@ function exnode{
 	lock throttle to 0.
 	SAS off.
 	rcs on.
-	lock DeltaV to nextnode:deltav:mag.
-	set BurnTime to .5*DeltaV*mass/availablethrust.
+	local deltaVee to nextnode:deltav:mag.
+	local BurnTime to .5*deltavee*mass/availablethrust.
 	lock steering to LOOKDIRUP(nextnode:burnvector,facing:topvector).
 	print "Aligning with Maneuver Node".
 	until VANG(ship:facing:vector,nextnode:burnvector) < 1 {
@@ -522,17 +531,17 @@ function exnode{
 	wait until BurnTime >= nextnode:eta.
 
 	clearscreen.
-	//lock throttle to DeltaV*mass/availablethrust.
+	//lock throttle to deltavee*mass/availablethrust.
 
 	print "Executing Node".
 
-	until DeltaV <= .1 {
+	until deltavee <= .1 {
 		if VANG(ship:facing:vector,nextnode:burnvector) < 1 {
-			lock throttle to DeltaV*mass/availablethrust.
+			lock throttle to deltavee*mass/availablethrust.
 		}else{
 			lock throttle to 0.
 		}
-		print "Delta V = " + round(DeltaV,1) + "   " at(0,1).
+		print "Delta V = " + round(deltavee,1) + "   " at(0,1).
 		print "Throttle = " + MIN(100,round(throttle*100)) + "%   " at(0,2).
 	}
 	lock throttle to 0.
