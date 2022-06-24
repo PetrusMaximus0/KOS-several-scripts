@@ -2,7 +2,6 @@
 // DO NOT switch THE ORDER OF THE FUNCTIONS!
 @lazyglobal off.
 set ship:control:pilotmainthrottle to 0.
-global deltavee to 0.
 function currentg{
 	return (ship:body):mu /(SHIP:ALTITUDE + (ship:body):RADIUS)^2.
 }
@@ -258,14 +257,13 @@ function ReentryPitchCorrection{
 	Print "angle correct ENDED    " at (10,10).
 	unlock all.
 }
-
 function properatmo{
 	//vectors
 	local targetaltvec 		to inputcoordinates:ALTITUDEPOSITION(ship:altitude).
-	local altvec 				to InputCoordinates:position-targetaltvec.
-	local progradePground 		to VXCL(up:vector,velocity:surface).
-	local wangle 				to vang (altvec,targetaltvec).
-	local errorangle 			to vang (InputCoordinates:position,altvec).//for theta0.
+	local altvec 			to InputCoordinates:position-targetaltvec.
+	local progradePground 	to VXCL(up:vector,velocity:surface).
+	local wangle 			to vang (altvec,targetaltvec).
+	local errorangle 		to vang (InputCoordinates:position,altvec).//for theta0.
 	local correction2Vec 		to VXCL(VXCL(up:vector,targetaltvec),ProgradePground).//eliminates "spin of death"
 	local RCSassistVec 		to (v(0,0,0)+InputCoordinates:altitudeposition(ship:altitude)).
 	//multipliers adjust as necessary.
@@ -531,10 +529,7 @@ function exnode{
 	wait until BurnTime >= nextnode:eta.
 
 	clearscreen.
-	//lock throttle to deltavee*mass/availablethrust.
-
 	print "Executing Node".
-
 	until deltavee <= .1 {
 		if VANG(ship:facing:vector,nextnode:burnvector) < 1 {
 			lock throttle to deltavee*mass/availablethrust.
