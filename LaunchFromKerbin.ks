@@ -4,7 +4,7 @@
 
 @lazyglobal off. 
 //LIBRARY INCLUSION
-run utility.ks.
+runOncePath("utility.ks").
 //GLOBAL VARIABLE DECLARATIONS
 //FUNCTION DECLARATIONS
 function preLaunch{

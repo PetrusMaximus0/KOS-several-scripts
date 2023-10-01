@@ -1,7 +1,7 @@
 // Kerbin Function LiB
 // DO NOT switch THE ORDER OF THE FUNCTIONS!
 @lazyglobal off.
-set ship:control:pilotmainthrottle to 0.//this makes no sense
+runOncePath("utility.ks").
 function landIt{
 	SteeringManager:RESETTODEFAULT().
 	parameter hov.
