@@ -1,57 +1,7 @@
 // Kerbin Function LiB
 // DO NOT switch THE ORDER OF THE FUNCTIONS!
 @lazyglobal off.
-set ship:control:pilotmainthrottle to 0.
-function currentg{
-	return (ship:body):mu /(SHIP:ALTITUDE + (ship:body):RADIUS)^2.
-}
-function ntval_calc{
-   	// not accurate with SRBs attached.
-	parameter desiredAcceleration.//desired acceleration
-	if ship:availablethrust > 0{
-        return ship:mass*desiredAcceleration/ship:availablethrust.	
-   }else{
-        return 0.
-   }
-}
-function tval_calc{
-	// not accurate with SRBs attached.
-	parameter DesiredTwr.
-	if Ship:AvailableThrust > 0{
-		return DesiredTWR / (Ship:AvailableThrust / (Ship:Mass * currentg()))  . //   tval = dtwr/(F/mg),  F = maxthrust
-	}else{ 
-		return 0. 
-	}
-}
-function stagelogic{
-	//local EngineHasFlameOut to false.
-	local motorlist to 0.
-	local engineNumberIS to 0.
-	local n to 0. 	
-	when true then {
-		set engineNumberIs to 0.
-		wait 0.5.				
-		list engines in motorlist.
-		For eng in motorlist{
-			set n to n+1.
-			set engineNumberIS to engineNumberIS + 1.
-			print "EngineNumber: " + engineNumberIS at (10,18+n).
-			if eng:FLAMEOUT = true {
-				stage.
-				clearscreen.
-				print "engine nº " + engineNUmberIs + " flamed out".
-			}
-			if eng:stage=stage:number and eng:ignition = false {			
-				eng:activate.
-				clearscreen.
-				print "engine nº " + engineNUmberIs + " was restarted".
-			}
-		}
-		set engineNumberIS to 0.
-		preserve.
-	}
-	//stagelogic().
-}
+set ship:control:pilotmainthrottle to 0.//this makes no sense
 function landIt{
 	SteeringManager:RESETTODEFAULT().
 	parameter hov.
@@ -135,7 +85,7 @@ function slamit{
 	}
 	LandIt(1).
 }	
-function Rocket_Ascent{
+function followAscentProfile{
 	//Power and trajectory guidance for ascent.
 	//This script can be restarted mid flight.
 	parameter OrbitHeading.
@@ -165,9 +115,8 @@ function Rocket_Ascent{
 	//30m\s max acc and continue the gravity turn so that 
 	//the ship points at 0 degrees by the time it reaches altitude 47 000 meters .
 	until ship:apoapsis > TargetApo	{
-		print round(ship:availablethrust/ship:mass,2) + "max accel" at (0,10).
 		set angleAltitudeRatio to ((ship:altitude-11000)/(47000-11000)). // angleAltitudeRatio is 1 at 47000m
-		//abort_logic( heading(OrbitHeading,(initialAngle-angleAltitudeRatio*45)) ).
+		print round(ship:availablethrust/ship:mass,2) + "max accel" at (0,10).
 		print round(initialAngle-angleAltitudeRatio*45)+" degrees" at (0,9).
 		wait 0.
 	}	
@@ -421,129 +370,4 @@ function hover{
 	print "K FACTOR "  		 + round (k,3)          + "   " 							 						at (0,5).
 	print "TARGET DISTANCE " + round (InputCoordinates:POSITION:mag,1)+ "   " 											at (20,5).
 	//
-}
-function launchProcedure{
-	set ship:control:pilotmainthrottle to 0.
-	lights on.
-	rcs on.
-	sas off.
-	print "setup complete".
-	print "waiting for launch conditions".
-	wait 1.
-	if  (ship:status = "prelaunch" and stage:liquidfuel <= 0 and stage:solidfuel <= 0)  {
-		print "Launch conditions met".
-		print "Launching from prelaunch status".
-		lock throttle to 1.
-		stage.
-	}else if  ship:status = "landed"{
-		print "Launch conditions met".
-		print "Launching from landed status, check headings".
-		lock throttle to 1.	
-	}
-}
-function ProgradeStabilize {
-	local englist to 0.
-	list engines in englist.
-	For eng in englist{
-		eng:shutdown.
-	}
-	set throttle to 0.
-	set ship:control:pilotmainthrottle to 0.
-	lock steering to prograde.
-}
-function ShipAngularMomentum {
-	local R_Ap to ship:apoapsis+Orbit:BODY:radius.
-	local R_Pe to ship:periapsis+Orbit:BODY:radius.
-	return ship:mass* sqrt( (2*Orbit:BODY:Mu)/(1/R_Ap+1/R_Pe) ). 
-}
-function OrbitalSpeedAtCritPointEliptical {
-	Parameter APorPE.//use "AP" or use  "PE"
-	Local MaxAltChoice to 0.
-
-	if APorPE = "AP"{
-		set MaxAltChoice to ship:apoapsis+Orbit:body:radius.
-	
-	}else if APorPE = "PE"{
-		set MaxAltChoice to ship:periapsis+Orbit:body:radius.
-	
-	}else{		
-		print("error Calling function").
-		return 0.
-	}
-	Return ShipAngularMomentum()/(ship:mass * MaxAltChoice).
-}
-function OrbitalSpeedCircular {
-	parameter expectedApo.
-	return sqrt(orbit:body:Mu/(expectedApo+orbit:body:radius)).
-
-}
-function AverageISP {
-	
-	local ISPsum to 0.
-	local NumberOfEngines to 0.
-	local engineList to 0.
-	list engines in engineList.
-	for motors in engineList {
-		if motors:stage = stage:number {
-			motors:activate.
-		}
-		set NumberOfEngines to NumberOfEngines+1.
-		set ISPsum to ISPsum + round(motors:isp).
-		print "EngineNumber " + NumberOfEngines +" ISPtotal = "+ ISPsum at (0,1).
-	}
-	return ISPsum/NumberOfEngines.
-}
-function abort_logic{
-	//not working at all
-	parameter desiredHeading.
-	local myvec to desiredHeading:vector.
-	local allowedOffset to 15. //in degrees 
-	if ( vang(myvec, ship:prograde) > allowedOffset) {
-		abort on.
-		sas off.
-		rcs off.
-		unlock all.
-		wait 10.
-		clearscreen.
-		print ("Aborted!").
-		reboot.
-	}
-}
-function exnode{
-	clearscreen.
-	set ship:control:pilotmainthrottle to 0.
-	lock throttle to 0.
-	SAS off.
-	rcs on.
-	local deltaVee to nextnode:deltav:mag.
-	local BurnTime to .5*deltavee*mass/availablethrust.
-	lock steering to LOOKDIRUP(nextnode:burnvector,facing:topvector).
-	print "Aligning with Maneuver Node".
-	until VANG(ship:facing:vector,nextnode:burnvector) < 1 {
-		print "Direction Angle Error = " + round(VANG(ship:facing:vector,nextnode:burnvector),1) + "   "at(0,1).
-	}
-	clearscreen.
-	print "Warping to Node".
-	print "Burn Starts at T-minus " + round(BurnTime,2) + "secs   ".
-	warpto(time:seconds + nextnode:eta - BurnTime - 10).
-	wait until BurnTime >= nextnode:eta.
-
-	clearscreen.
-	print "Executing Node".
-	until deltavee <= .1 {
-		if VANG(ship:facing:vector,nextnode:burnvector) < 1 {
-			lock throttle to deltavee*mass/availablethrust.
-		}else{
-			lock throttle to 0.
-		}
-		print "Delta V = " + round(deltavee,1) + "   " at(0,1).
-		print "Throttle = " + MIN(100,round(throttle*100)) + "%   " at(0,2).
-	}
-	lock throttle to 0.
-	unlock all.
-	rcs off.
-	sas on.
-	remove nextnode.
-	clearscreen.
-	print "Node Executed".
 }
